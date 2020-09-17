@@ -3,6 +3,7 @@ package com.antra.evaluation.reporting_system.endpoint;
 import com.antra.evaluation.reporting_system.pojo.api.ExcelRequest;
 import com.antra.evaluation.reporting_system.pojo.api.ExcelResponse;
 import com.antra.evaluation.reporting_system.pojo.api.MultiSheetExcelRequest;
+import com.antra.evaluation.reporting_system.pojo.report.ExcelFile;
 import com.antra.evaluation.reporting_system.service.ExcelService;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
@@ -34,16 +35,19 @@ public class ExcelGenerationController {
 
     @PostMapping("/excel")
     @ApiOperation("Generate Excel")
-    public ResponseEntity<ExcelResponse> createExcel(@RequestBody @Validated ExcelRequest request) {
+    public ResponseEntity<ExcelResponse> createExcel(@RequestBody @Validated ExcelRequest request) throws IOException {
+        ExcelFile excelFile = excelService.save(request);
         ExcelResponse response = new ExcelResponse();
+        response.setFileId(excelFile.getId());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/excel/auto")
     @ApiOperation("Generate Multi-Sheet Excel Using Split field")
-    public ResponseEntity<ExcelResponse> createMultiSheetExcel(@RequestBody @Validated MultiSheetExcelRequest request) {
+    public ResponseEntity<ExcelResponse> createMultiSheetExcel(@RequestBody @Validated MultiSheetExcelRequest request) throws IOException {
+        ExcelFile excelFile = excelService.save(request);
         ExcelResponse response = new ExcelResponse();
-
+        response.setFileId(excelFile.getId());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
@@ -59,7 +63,7 @@ public class ExcelGenerationController {
     public void downloadExcel(@PathVariable String id, HttpServletResponse response) throws IOException {
         InputStream fis = excelService.getExcelBodyById(id);
         response.setHeader("Content-Type","application/vnd.ms-excel");
-        response.setHeader("Content-Disposition","attachment; filename=\"name_of_excel_file.xls\""); // TODO: File name cannot be hardcoded here
+        response.setHeader("Content-Disposition","attachment; filename=\"" + id + ".xls\""); // TODO: File name cannot be hardcoded here
         FileCopyUtils.copy(fis, response.getOutputStream());
     }
 
