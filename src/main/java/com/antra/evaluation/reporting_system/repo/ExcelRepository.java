@@ -12,5 +12,7 @@ public interface ExcelRepository {
 
     ExcelFile deleteFile(String id);
 
-    List<ExcelFile> getFiles();
+    List<ExcelFile> getListFiles();
+
+    ExcelFile getFileDataById(String id);
 }

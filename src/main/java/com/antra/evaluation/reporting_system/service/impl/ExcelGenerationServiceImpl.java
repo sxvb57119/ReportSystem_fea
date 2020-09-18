@@ -1,5 +1,7 @@
 package com.antra.evaluation.reporting_system.service.impl;
 
+import com.antra.evaluation.reporting_system.enums.ErrorEnum;
+import com.antra.evaluation.reporting_system.exception.DataException;
 import com.antra.evaluation.reporting_system.pojo.report.ExcelData;
 import com.antra.evaluation.reporting_system.pojo.report.ExcelDataHeader;
 import com.antra.evaluation.reporting_system.pojo.report.ExcelDataSheet;
@@ -33,17 +35,17 @@ public class ExcelGenerationServiceImpl implements ExcelGenerationService {
 
     private void validateDate(ExcelData data) {
         if (data.getSheets().size() < 1) {
-            throw new RuntimeException("Excel Data Error: no sheet is defined");
+            throw new DataException(ErrorEnum.NO_SHEET_DEFINED);
         }
         for (ExcelDataSheet sheet : data.getSheets()) {
             if (StringUtils.isEmpty(sheet.getTitle())) {
-                throw new RuntimeException("Excel Data Error: sheet name is missing");
+                throw new DataException(ErrorEnum.NO_SHEET_NAME);
             }
             if(sheet.getHeaders() != null) {
                 int columns = sheet.getHeaders().size();
                 for (List<Object> dataRow : sheet.getDataRows()) {
                     if (dataRow.size() != columns) {
-                        throw new RuntimeException("Excel Data Error: sheet data has difference length than header number");
+                        throw new DataException(ErrorEnum.ERROR_WITH_DATA_LENGTH);
                     }
                 }
             }

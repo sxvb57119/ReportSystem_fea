@@ -1,5 +1,7 @@
 package com.antra.evaluation.reporting_system.pojo.report;
 
+import com.antra.evaluation.reporting_system.enums.ExcelDataType;
+
 public class ExcelDataHeader {
     private String name;
     private ExcelDataType type;

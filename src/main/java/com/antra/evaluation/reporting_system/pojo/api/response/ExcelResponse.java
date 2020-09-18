@@ -1,13 +1,17 @@
-package com.antra.evaluation.reporting_system.pojo.api;
+package com.antra.evaluation.reporting_system.pojo.api.response;
 
-public class ExcelResponse {
-    private String fileId;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-    public String getFileId() {
-        return fileId;
-    }
 
-    public void setFileId(String fileId) {
-        this.fileId = fileId;
-    }
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class ExcelResponse<T> {
+    private String message;
+    private T body;
+
 }

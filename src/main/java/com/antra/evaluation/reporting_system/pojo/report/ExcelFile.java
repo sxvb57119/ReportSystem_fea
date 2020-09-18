@@ -1,15 +1,23 @@
 package com.antra.evaluation.reporting_system.pojo.report;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ExcelFile {
 
-    String id;
+    private String id;
 
-    public String getId() {
-        return id;
-    }
+    private String fileSize;
 
-    public void setId(String id) {
-        this.id = id;
-    }
+    private LocalDateTime generatedTime;
+
+    private String downLoadLink;
 }

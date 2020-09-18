@@ -32,10 +32,15 @@ public class ExcelRepositoryImpl implements ExcelRepository {
     }
 
     @Override
-    public List<ExcelFile> getFiles() {
+    public List<ExcelFile> getListFiles() {
         List<ExcelFile> excelFileList = new ArrayList<>(excelData.values());
         return excelFileList;
 
+    }
+
+    @Override
+    public ExcelFile getFileDataById(String id) {
+        return excelData.get(id);
     }
 }
 

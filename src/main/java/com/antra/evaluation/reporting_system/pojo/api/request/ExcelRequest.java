@@ -1,33 +1,31 @@
-package com.antra.evaluation.reporting_system.pojo.api;
+package com.antra.evaluation.reporting_system.pojo.api.request;
 
+import lombok.Data;
+
+import javax.validation.constraints.AssertTrue;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 
+@Data
 public class ExcelRequest {
+
+    @NotEmpty
     private List<String> headers;
+
+    @NotBlank
     private String description;
+
+    @NotEmpty
     private List<List<String>> data;
 
-    public List<List<String>> getData() {
-        return data;
+    @AssertTrue
+    private boolean isValidDataFormat() {
+        int headerSize = headers.size();
+        for (List<String> dataRow : data) {
+            if (dataRow.size() != headerSize) return false;
+        }
+        return true;
     }
 
-    public void setData(List<List<String>> data) {
-        this.data = data;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public List<String> getHeaders() {
-        return headers;
-    }
-
-    public void setHeaders(List<String> headers) {
-        this.headers = headers;
-    }
 }

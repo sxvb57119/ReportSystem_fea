@@ -1,8 +1,8 @@
 package com.antra.evaluation.reporting_system.endpoint;
 
-import com.antra.evaluation.reporting_system.pojo.api.ExcelRequest;
-import com.antra.evaluation.reporting_system.pojo.api.ExcelResponse;
-import com.antra.evaluation.reporting_system.pojo.api.MultiSheetExcelRequest;
+import com.antra.evaluation.reporting_system.pojo.api.request.ExcelRequest;
+import com.antra.evaluation.reporting_system.pojo.api.response.ExcelResponse;
+import com.antra.evaluation.reporting_system.pojo.api.request.MultiSheetExcelRequest;
 import com.antra.evaluation.reporting_system.pojo.report.ExcelFile;
 import com.antra.evaluation.reporting_system.service.ExcelService;
 import io.swagger.annotations.ApiOperation;
@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -36,27 +35,26 @@ public class ExcelGenerationController {
     @PostMapping("/excel")
     @ApiOperation("Generate Excel")
     public ResponseEntity<ExcelResponse> createExcel(@RequestBody @Validated ExcelRequest request) throws IOException {
-        ExcelFile excelFile = excelService.save(request);
-        ExcelResponse response = new ExcelResponse();
-        response.setFileId(excelFile.getId());
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        ExcelFile excelFile = excelService.saveExcel(request);
+
+        return new ResponseEntity<ExcelResponse>(new ExcelResponse("success",excelFile), HttpStatus.OK);
     }
 
     @PostMapping("/excel/auto")
     @ApiOperation("Generate Multi-Sheet Excel Using Split field")
     public ResponseEntity<ExcelResponse> createMultiSheetExcel(@RequestBody @Validated MultiSheetExcelRequest request) throws IOException {
-        ExcelFile excelFile = excelService.save(request);
-        ExcelResponse response = new ExcelResponse();
-        response.setFileId(excelFile.getId());
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        ExcelFile excelFile = excelService.saveExcel(request);
+        return new ResponseEntity<ExcelResponse>(new ExcelResponse("success",excelFile), HttpStatus.OK);
     }
+
+
 
     @GetMapping("/excel")
     @ApiOperation("List all existing files")
-    public ResponseEntity<List<ExcelResponse>> listExcels() {
-        var response = new ArrayList<ExcelResponse>();
+    public ResponseEntity<ExcelResponse> listExcels() {
+        List<ExcelFile> excelFileList = excelService.getAllFiles();
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return new ResponseEntity<ExcelResponse>(new ExcelResponse("ojbk",excelFileList), HttpStatus.OK);
     }
 
     @GetMapping("/excel/{id}/content")
@@ -67,10 +65,22 @@ public class ExcelGenerationController {
         FileCopyUtils.copy(fis, response.getOutputStream());
     }
 
+    @GetMapping("/excel/{id}/data")
+    @ApiOperation("get metadata of an excel file")
+    public ResponseEntity<ExcelResponse> getExcelFileById(@PathVariable String id) {
+        ExcelFile excelFile = excelService.getExcelDataById(id);
+        return new ResponseEntity<ExcelResponse>(new ExcelResponse("success",excelFile), HttpStatus.OK);
+
+    }
+
+
     @DeleteMapping("/excel/{id}")
+    @ApiOperation(value = "delete a Excel file")
     public ResponseEntity<ExcelResponse> deleteExcel(@PathVariable String id) {
+        ExcelFile excelFile = excelService.getExcelDataById(id);
+        excelService.deleteExcel(id);
         var response = new ExcelResponse();
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return new ResponseEntity<ExcelResponse>(new ExcelResponse("ojbk",excelFile), HttpStatus.OK);
     }
 }
 // Log
