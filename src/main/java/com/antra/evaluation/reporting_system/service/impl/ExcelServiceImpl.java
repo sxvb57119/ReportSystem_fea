@@ -1,7 +1,8 @@
 package com.antra.evaluation.reporting_system.service.impl;
 
-import com.antra.evaluation.reporting_system.converter.Request2Data;
-import com.antra.evaluation.reporting_system.converter.Request2File;
+import com.antra.evaluation.reporting_system.pojo.api.request.MultiExcelRequest;
+import com.antra.evaluation.reporting_system.utility.converter.MultiExcelRequest2List;
+import com.antra.evaluation.reporting_system.utility.converter.Request2Data;
 import com.antra.evaluation.reporting_system.enums.ErrorEnum;
 import com.antra.evaluation.reporting_system.exception.FileException;
 import com.antra.evaluation.reporting_system.pojo.api.request.ExcelRequest;
@@ -15,11 +16,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 
+import javax.validation.Valid;
 import java.io.*;
-import java.text.ParseException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
@@ -36,17 +37,16 @@ public class ExcelServiceImpl implements ExcelService {
     @Override
     public InputStream getExcelBodyById(String id) {
 
-        Optional<ExcelFile> fileInfo = excelRepository.getFileById(id);
-        if(fileInfo == null) throw new FileException(ErrorEnum.FILE_ID_NOT_EXIST);
-        // if (fileInfo.isPresent()) {
+        ExcelFile fileInfo = excelRepository.getFileById(id);
+        if(fileInfo == null) return null;
+
         File file = new File(id + ".xlsx");
         try {
             return new FileInputStream(file);
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
             throw new  FileException(ErrorEnum.FILE_NOT_EXIST);
         }
-        //  }
+
     }
 
     @Override
@@ -63,8 +63,18 @@ public class ExcelServiceImpl implements ExcelService {
     }
 
     @Override
+    public List<ExcelFile> saveMultiExcel(MultiExcelRequest multiExcelRequest) throws IOException {
+
+        List<ExcelRequest> excelRequestList = multiExcelRequest.getExcelRequestList();
+        for(ExcelRequest excelRequest : excelRequestList) {
+
+        }
+        return null;
+    }
+
+    @Override
     public ExcelFile getExcelDataById(String id) {
-       return  excelRepository.getFileDataById(id);
+       return  excelRepository.getFileById(id);
     }
 
     @Override

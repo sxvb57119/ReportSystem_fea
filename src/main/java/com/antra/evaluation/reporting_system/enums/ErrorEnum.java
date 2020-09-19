@@ -5,19 +5,21 @@ import lombok.Getter;
 @Getter
 public enum ErrorEnum {
 
-    FILE_ID_NOT_EXIST(1, "This file Id doesn`t exist"),
-
-    FILE_NOT_EXIST(2, "This file doesnt`t exist"),
-
-    PARAM_ERROR(11, "error with parameter type"),
-
-    NO_SHEET_DEFINED(22, "Excel Data Error: no sheet is defined"),
-
-    NO_SHEET_NAME( 23, "Excel Data Error: sheet name is missing"),
-
-    ERROR_WITH_DATA_LENGTH(24,"Excel Data Error: sheet data has difference length than header number")
 
 
+    FILE_NOT_EXIST(1, "Excel FIle Error: This file doesnt`t exist"),
+
+    PARAM_ERROR(11, "Excel Data Error: Error with parameter type"),
+
+    NO_SHEET_DEFINED(12, "Excel Data Error: no sheet is defined"),
+
+    NO_SHEET_NAME( 13, "Excel Data Error: Sheet name is missing"),
+
+    ERROR_WITH_DATA_LENGTH(14,"Excel Data Error: Sheet data has difference length than header number"),
+
+    DOWNLOAD_ERROR(31, "IO Error: File download failed"),
+
+    UPLOAD_ERROR(32, "IO Error: File save failed"),
 
     ;
 

@@ -15,8 +15,8 @@ public class ExcelRepositoryImpl implements ExcelRepository {
     Map<String, ExcelFile> excelData = new ConcurrentHashMap<>();
 
     @Override
-    public Optional<ExcelFile> getFileById(String id) {
-        return Optional.ofNullable(excelData.get(id));
+    public ExcelFile getFileById(String id) {
+        return excelData.get(id);
     }
 
     @Override
@@ -33,14 +33,10 @@ public class ExcelRepositoryImpl implements ExcelRepository {
 
     @Override
     public List<ExcelFile> getListFiles() {
-        List<ExcelFile> excelFileList = new ArrayList<>(excelData.values());
-        return excelFileList;
+        return new ArrayList<>(excelData.values());
 
     }
 
-    @Override
-    public ExcelFile getFileDataById(String id) {
-        return excelData.get(id);
-    }
+
 }
 

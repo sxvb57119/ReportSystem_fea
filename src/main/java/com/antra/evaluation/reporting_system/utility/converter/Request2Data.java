@@ -1,7 +1,7 @@
-package com.antra.evaluation.reporting_system.converter;
+package com.antra.evaluation.reporting_system.utility.converter;
 
 import com.antra.evaluation.reporting_system.enums.ErrorEnum;
-import com.antra.evaluation.reporting_system.exception.FileException;
+import com.antra.evaluation.reporting_system.exception.DataException;
 import com.antra.evaluation.reporting_system.pojo.api.request.ExcelRequest;
 import com.antra.evaluation.reporting_system.pojo.api.request.MultiSheetExcelRequest;
 import com.antra.evaluation.reporting_system.pojo.report.ExcelData;
@@ -89,7 +89,7 @@ public class Request2Data {
                         try {
                             dataRows.get(j).add(NumberUtils.createNumber(data.stream().map(x -> x.get(finalI1)).collect(Collectors.toList()).get(j)));
                         } catch (NumberFormatException e) {
-                            throw new FileException(ErrorEnum.PARAM_ERROR);
+                            throw new DataException(ErrorEnum.PARAM_ERROR);
                         }
 
                     }
@@ -107,7 +107,7 @@ public class Request2Data {
                         try {
                             curList.add(DateUtils.parseDate(originList.get(i), PARSE_PATTERNS));
                         } catch (ParseException e) {
-                            throw new FileException(ErrorEnum.PARAM_ERROR);
+                            throw new DataException(ErrorEnum.PARAM_ERROR);
                         }
 
                     }
