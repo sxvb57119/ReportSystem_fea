@@ -7,11 +7,14 @@ import com.antra.evaluation.reporting_system.pojo.api.request.ExcelRequest;
 import com.antra.evaluation.reporting_system.pojo.api.request.MultiExcelRequest;
 import com.antra.evaluation.reporting_system.pojo.api.response.ErrorResponse;
 import com.antra.evaluation.reporting_system.pojo.api.response.ExcelResponse;
-import com.antra.evaluation.reporting_system.pojo.api.request.MultiSheetExcelRequest;
 import com.antra.evaluation.reporting_system.pojo.report.ExcelFile;
 import com.antra.evaluation.reporting_system.service.ExcelService;
-import com.antra.evaluation.reporting_system.utility.group.ValidationGroup;
+import com.antra.evaluation.reporting_system.utility.ZipUtils;
+import com.antra.evaluation.reporting_system.utility.group.GenericGroup;
+import com.antra.evaluation.reporting_system.utility.group.MultiSheetGroup;
+import com.antra.evaluation.reporting_system.utility.group.SingleSheetGroup;
 import io.swagger.annotations.ApiOperation;
+import net.bytebuddy.description.type.TypeList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,17 +26,22 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.zip.ZipOutputStream;
 
 @RestController
 public class ExcelGenerationController {
 
     private static final Logger log = LoggerFactory.getLogger(ExcelGenerationController.class);
 
-    ExcelService excelService;
+    private ExcelService excelService;
 
     @Autowired
     public ExcelGenerationController(ExcelService excelService) {
@@ -42,39 +50,60 @@ public class ExcelGenerationController {
 
     @PostMapping("/excel")
     @ApiOperation("Generate Excel")
-    public ResponseEntity<ExcelResponse> createExcel(@RequestBody @Validated({ValidationGroup.class}) ExcelRequest request) {
-        ExcelFile excelFile = new ExcelFile();
-        try {
-            excelFile = excelService.saveExcel(request);
-        } catch (IOException e) {
-            throw new FileException(ErrorEnum.UPLOAD_ERROR);
-        }
-        return new ResponseEntity<>(new ExcelResponse("Generated Successfully", excelFile), HttpStatus.CREATED);
-    }
-
-    @PostMapping("/excel/auto")
-    @ApiOperation("Generate Multi-Sheet Excel Using Split field")
-    public ResponseEntity<ExcelResponse> createMultiSheetExcel(@RequestBody @Validated({ValidationGroup.class}) MultiSheetExcelRequest request) throws IOException {
+    public ResponseEntity<ExcelResponse> createExcel(@RequestBody @Validated({SingleSheetGroup.class}) ExcelRequest request) {
         ExcelFile excelFile;
         try {
             excelFile = excelService.saveExcel(request);
         } catch (IOException e) {
             throw new FileException(ErrorEnum.UPLOAD_ERROR);
         }
-        return new ResponseEntity<>(new ExcelResponse("Generated Successfully", excelFile), HttpStatus.CREATED);
+        return new ResponseEntity<>(new ExcelResponse<>("Generated Successfully", excelFile), HttpStatus.CREATED);
+    }
+
+    @PostMapping("/excel/auto")
+    @ApiOperation("Generate Multi-Sheet Excel Using Split field")
+    public ResponseEntity<ExcelResponse> createMultiSheetExcel(@RequestBody @Validated({MultiSheetGroup.class}) ExcelRequest request) throws IOException {
+        ExcelFile excelFile;
+        try {
+            excelFile = excelService.saveExcel(request);
+        } catch (IOException e) {
+            throw new FileException(ErrorEnum.UPLOAD_ERROR);
+        }
+        return new ResponseEntity<>(new ExcelResponse<>("Generated Successfully", excelFile), HttpStatus.CREATED);
     }
 
     @PostMapping("/excel/multi")
-    public ResponseEntity<ExcelResponse> createMultiExcel(@RequestBody @Validated MultiExcelRequest models) throws IOException {
-        //List<ExcelFile> excelFileList = excelService.saveMultiExcel(models);
-        List<ExcelRequest> list = models.getExcelRequestList();
-        ExcelRequest excelRequest1 = list.get(0);
-        ExcelRequest excelRequest2 = list.get(1);
-        System.out.println(excelRequest1.getSplitBy());
-        System.out.println(excelRequest2.getSplitBy());
+    @ApiOperation("generate multiple excel files")
+    public ResponseEntity<ExcelResponse> createMultiExcel(@RequestBody @Validated({GenericGroup.class}) MultiExcelRequest models) {
+        boolean saveAll = true;
+        List<ExcelRequest> excelRequestList = models.getExcels();
+        List<Object> responseList = new ArrayList<>();
+        for (ExcelRequest excelRequest : excelRequestList) {
+            try {
+                ExcelFile excelFile = excelService.saveExcel(excelRequest);
+                responseList.add(new ExcelResponse("Generated Successfully", excelFile));
+            } catch (IOException ex) {
+                ErrorResponse error = new ErrorResponse();
+                String message = ErrorEnum.UPLOAD_ERROR.getMessage();
+                error.setMessage(message);
+                log.error(message, ex);
+                responseList.add(error);
+                saveAll = false;
 
-        ExcelResponse excelResponse = new ExcelResponse();
-        return new ResponseEntity<>(new ExcelResponse("Generated Successfully", excelResponse), HttpStatus.CREATED);
+            } catch (DataException | FileException ex) {
+                ErrorResponse error = new ErrorResponse();
+                Integer errorCode = ex.getCode();
+                error.setErrorCode(errorCode);
+                String message = ex.getErrorMessage();
+                error.setMessage(message);
+                log.error(message, ex);
+                responseList.add(error);
+                saveAll = false;
+            }
+        }
+
+        return new ResponseEntity<>(new ExcelResponse<>("Generated finished", responseList), saveAll ? HttpStatus.CREATED : HttpStatus.BAD_REQUEST);
+
     }
 
 
@@ -83,7 +112,7 @@ public class ExcelGenerationController {
     public ResponseEntity<ExcelResponse> listExcels() {
         List<ExcelFile> excelFileList = excelService.getAllFiles();
         if (excelFileList == null || excelFileList.size() == 0) throw new FileException(ErrorEnum.FILE_NOT_EXIST);
-        return new ResponseEntity<ExcelResponse>(new ExcelResponse("All Excel Files", excelFileList), HttpStatus.OK);
+        return new ResponseEntity<>(new ExcelResponse("All Excel Files", excelFileList), HttpStatus.OK);
     }
 
     @GetMapping("/excel/{id}/content")
@@ -100,12 +129,37 @@ public class ExcelGenerationController {
 
     }
 
+    @GetMapping("/excel/multi/content")
+    public void downloadMultiExcels(HttpServletResponse response, @RequestParam String[] fileId) throws IOException {
+        response.setHeader("Content-Type", "application/zip");
+        response.setHeader("Content-Disposition", "attachment; filename=\"Download.zip\"");
+
+        ZipOutputStream out = new ZipOutputStream(response.getOutputStream());
+        List<File> fileList = new ArrayList<>();
+        for (String id : fileId) {
+            if (excelService.getExcelDataById(id) == null) throw new FileException(1, id + " file dosen`t exist");
+            fileList.add(new File(id + ".xlsx"));
+        }
+        try {
+            for (Iterator<File> it = fileList.iterator(); it.hasNext(); ) {
+                File file = it.next();
+                ZipUtils.doCompress(file.getName(), out);
+                response.flushBuffer();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            out.close();
+        }
+    }
+
+
     @GetMapping("/excel/{id}/data")
     @ApiOperation("get metadata of an excel file")
     public ResponseEntity<ExcelResponse> getExcelFileById(@PathVariable String id) {
         ExcelFile excelFile = excelService.getExcelDataById(id);
         if (excelFile == null) throw new FileException(ErrorEnum.FILE_NOT_EXIST);
-        return new ResponseEntity<ExcelResponse>(new ExcelResponse("MateData of " + id, excelFile), HttpStatus.OK);
+        return new ResponseEntity<>(new ExcelResponse<>("MateData of " + id, excelFile), HttpStatus.OK);
 
     }
 
@@ -116,7 +170,7 @@ public class ExcelGenerationController {
         ExcelFile excelFile = excelService.getExcelDataById(id);
         if (excelFile == null) throw new FileException(ErrorEnum.FILE_NOT_EXIST);
         excelService.deleteExcel(id);
-        return new ResponseEntity<>(new ExcelResponse("Deleted Successfully", excelFile), HttpStatus.OK);
+        return new ResponseEntity<>(new ExcelResponse<>("Deleted Successfully", excelFile), HttpStatus.OK);
     }
 
     @ExceptionHandler(Exception.class)

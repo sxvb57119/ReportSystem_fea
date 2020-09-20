@@ -3,7 +3,6 @@ package com.antra.evaluation.reporting_system.utility.converter;
 import com.antra.evaluation.reporting_system.enums.ErrorEnum;
 import com.antra.evaluation.reporting_system.exception.DataException;
 import com.antra.evaluation.reporting_system.pojo.api.request.ExcelRequest;
-import com.antra.evaluation.reporting_system.pojo.api.request.MultiSheetExcelRequest;
 import com.antra.evaluation.reporting_system.pojo.report.ExcelData;
 
 
@@ -40,14 +39,14 @@ public class Request2Data {
         return excelData;
     }
 
-    public static ExcelData convert2MultiSheetData(MultiSheetExcelRequest multiSheetExcelRequest, String title, LocalDateTime generatedTime)  {
+    public static ExcelData convert2MultiSheetData(ExcelRequest excelRequest, String title, LocalDateTime generatedTime)  {
 
         ExcelData excelData = new ExcelData();
         excelData.setTitle(title);
         excelData.setGeneratedTime(generatedTime);
-        List<String> headers = multiSheetExcelRequest.getHeaders();
-        List<List<String>> data = multiSheetExcelRequest.getData();
-        String splitBy = multiSheetExcelRequest.getSplitBy();
+        List<String> headers = excelRequest.getHeaders();
+        List<List<String>> data = excelRequest.getData();
+        String splitBy = excelRequest.getSplitBy();
         int splitByIdx = 0;
         while (splitByIdx < headers.size() && !splitBy.equalsIgnoreCase(headers.get(splitByIdx))) splitByIdx++;
         int finalSplitByIdx = splitByIdx;

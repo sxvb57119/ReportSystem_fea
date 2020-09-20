@@ -24,7 +24,7 @@ public  abstract class ExcelException extends RuntimeException {
 
     public ExcelException(Integer code, String message) {
         super(message);
-
+        this.errorMessage  = message;
         this.code = code;
     }
 }

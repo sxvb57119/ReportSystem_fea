@@ -1,7 +1,6 @@
 package com.antra.evaluation.reporting_system.service;
 
 import com.antra.evaluation.reporting_system.pojo.api.request.ExcelRequest;
-import com.antra.evaluation.reporting_system.pojo.api.request.MultiExcelRequest;
 import com.antra.evaluation.reporting_system.pojo.report.ExcelFile;
 
 import java.io.IOException;
@@ -20,5 +19,4 @@ public interface ExcelService {
 
     List<ExcelFile> getAllFiles();
 
-    List<ExcelFile> saveMultiExcel(MultiExcelRequest multiExcelRequest) throws IOException;
 }
