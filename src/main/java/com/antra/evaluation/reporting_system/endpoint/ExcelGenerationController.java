@@ -57,6 +57,7 @@ public class ExcelGenerationController {
         } catch (IOException e) {
             throw new FileException(ErrorEnum.UPLOAD_ERROR);
         }
+        log.info("CGenerated single sheet excel successfully, Description {}", request.getDescription());
         return new ResponseEntity<>(new ExcelResponse<>("Generated Successfully", excelFile), HttpStatus.CREATED);
     }
 
@@ -69,6 +70,7 @@ public class ExcelGenerationController {
         } catch (IOException e) {
             throw new FileException(ErrorEnum.UPLOAD_ERROR);
         }
+        log.info("CGenerated multi-sheet Excel Successfully, Description {}", request.getDescription());
         return new ResponseEntity<>(new ExcelResponse<>("Generated Successfully", excelFile), HttpStatus.CREATED);
     }
 
@@ -101,7 +103,8 @@ public class ExcelGenerationController {
                 saveAll = false;
             }
         }
-
+        log.info("CGenerated  multiple excels, Description {}", models.getExcels().stream().map(ExcelRequest::getDescription)
+                .collect(Collectors.toList()));
         return new ResponseEntity<>(new ExcelResponse<>("Generated finished", responseList), saveAll ? HttpStatus.CREATED : HttpStatus.BAD_REQUEST);
 
     }
@@ -111,22 +114,35 @@ public class ExcelGenerationController {
     @ApiOperation("List all existing files")
     public ResponseEntity<ExcelResponse> listExcels() {
         List<ExcelFile> excelFileList = excelService.getAllFiles();
-        if (excelFileList == null || excelFileList.size() == 0) throw new FileException(ErrorEnum.FILE_NOT_EXIST);
+        if (excelFileList == null || excelFileList.size() == 0) {
+            FileException ex = new FileException(ErrorEnum.FILE_NOT_EXIST);
+            log.error(ex.getErrorMessage(), ex);
+            throw ex;
+        }
+        log.info("All Excels,  id: {}", excelFileList.stream().map(ExcelFile::getId).collect(Collectors.toList()));
         return new ResponseEntity<>(new ExcelResponse("All Excel Files", excelFileList), HttpStatus.OK);
+
     }
 
     @GetMapping("/excel/{id}/content")
     public void downloadExcel(@PathVariable String id, HttpServletResponse response) {
         InputStream fis = excelService.getExcelBodyById(id);
-        if (fis == null) throw new FileException(ErrorEnum.FILE_NOT_EXIST);
+        if (fis == null) {
+            FileException ex = new FileException(ErrorEnum.FILE_NOT_EXIST);
+            log.error(ex.getErrorMessage(), ex);
+            throw ex;
+        }
         response.setHeader("Content-Type", "application/vnd.ms-excel");
         response.setHeader("Content-Disposition", "attachment; filename=\"" + id + ".xls\""); // TODO: File name cannot be hardcoded here
         try {
             FileCopyUtils.copy(fis, response.getOutputStream());
         } catch (IOException e) {
-            throw new FileException(ErrorEnum.DOWNLOAD_ERROR);
+            FileException ex = new FileException(ErrorEnum.DOWNLOAD_ERROR);
+            log.error(ex.getErrorMessage(), ex);
+            throw ex;
         }
 
+        log.info("File " + id + " downloaded successfully");
     }
 
     @GetMapping("/excel/multi/content")
@@ -147,7 +163,9 @@ public class ExcelGenerationController {
                 response.flushBuffer();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            FileException ex = new FileException(ErrorEnum.DOWNLOAD_ERROR);
+            log.error(ex.getErrorMessage(), ex);
+            throw ex;
         } finally {
             out.close();
         }
@@ -158,7 +176,12 @@ public class ExcelGenerationController {
     @ApiOperation("get metadata of an excel file")
     public ResponseEntity<ExcelResponse> getExcelFileById(@PathVariable String id) {
         ExcelFile excelFile = excelService.getExcelDataById(id);
-        if (excelFile == null) throw new FileException(ErrorEnum.FILE_NOT_EXIST);
+        if (excelFile == null) {
+            FileException ex = new FileException(ErrorEnum.FILE_NOT_EXIST);
+            log.error(ex.getErrorMessage(), ex);
+            throw ex;
+        }
+        log.info("Lod metadata of , id = ", excelFile.getId());
         return new ResponseEntity<>(new ExcelResponse<>("MateData of " + id, excelFile), HttpStatus.OK);
 
     }
@@ -168,8 +191,13 @@ public class ExcelGenerationController {
     @ApiOperation(value = "delete a Excel file")
     public ResponseEntity<ExcelResponse> deleteExcel(@PathVariable String id) {
         ExcelFile excelFile = excelService.getExcelDataById(id);
-        if (excelFile == null) throw new FileException(ErrorEnum.FILE_NOT_EXIST);
+        if (excelFile == null) {
+            FileException ex = new FileException(ErrorEnum.FILE_NOT_EXIST);
+            log.error(ex.getErrorMessage(), ex);
+            throw ex;
+        }
         excelService.deleteExcel(id);
+        log.info( id + " deleted");
         return new ResponseEntity<>(new ExcelResponse<>("Deleted Successfully", excelFile), HttpStatus.OK);
     }
 
@@ -185,8 +213,8 @@ public class ExcelGenerationController {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> methodArgumentNotValidExceptionHandler(MethodArgumentNotValidException ex) {
         ErrorResponse error = new ErrorResponse();
-        error.setErrorCode(HttpStatus.BAD_REQUEST.value());
-        String message = ex.getBindingResult().getFieldError().getDefaultMessage();
+        error.setErrorCode(ErrorEnum.INPUT_FORMAT_ERROR.getCode());
+        String message = ErrorEnum.INPUT_FORMAT_ERROR.getMessage();
         error.setMessage(message);
         log.error(message, ex);
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);

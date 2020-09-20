@@ -55,6 +55,21 @@ public class APITest {
     }
 
     @Test
+    void testExcelGenerationButNoHeaders() throws IOException {
+        ExcelFile testExcelFile = ExcelFile.builder().id("Excel-1").build();
+        Mockito.when(excelService.saveExcel(any())).thenReturn(testExcelFile);
+        given().accept("application/json").contentType(ContentType.JSON)
+                .body("{\"data\":[[\"Teresa\",\"5\"],[\"Daniel\",\"1\"]]}")
+                .post("/excel/auto").peek().
+                then().assertThat()
+                .statusCode(400)
+                .body("message", Matchers.equalTo("Excel Data Error: Input data format has error, headers and data must exist and in same length. " +
+                        "For multi-sheet request, the field for split by cannot be null"));
+    }
+
+
+
+    @Test
     public void testMultiSheetExcelGeneration() throws IOException {
         ExcelFile testExcel = ExcelFile.builder().id("Excel-1").build();
         Mockito.when(excelService.saveExcel(any())).thenReturn(testExcel);
@@ -91,7 +106,7 @@ public class APITest {
     }
 
     @Test
-    public void testFileDownloadNotExist()  {
+    public void testFileDownloadNotExist() {
         Mockito.when(excelService.getExcelBodyById(anyString())).thenReturn(null);
         given().accept("application/json").get("/excel/123abcd/content").peek().
                 then().assertThat()
@@ -106,7 +121,6 @@ public class APITest {
                 then().assertThat()
                 .statusCode(200);
     }
-
 
 
     @Test
