@@ -21,9 +21,12 @@ import java.util.stream.Collectors;
 
 public class Request2Data {
 
-    private static final String[] PARSE_PATTERNS = {"yyyy-MM-dd",
+    private static final String[] DATE_PATTERNS = {"yyyy-MM-dd",
             "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy/MM/dd",
-            "yyyy/MM/dd HH:mm:ss", "yyyy/MM/dd HH:mm", "yyyyMMdd"};
+            "yyyy/MM/dd HH:mm:ss", "yyyy/MM/dd HH:mm", "yyyy-MM-dd",
+            "dd-MM-yyyy HH:mm:ss", "dd-MM-yyyy,",
+            "dd/MM/yyyy", "dd/MM/yyyy HH:mm:ss",
+            "dd/MM/yyyy HH:mm"};
 
 
     public static ExcelData convert2SingleSheetData(ExcelRequest excelRequest, String title, LocalDateTime generatedTime)  {
@@ -85,8 +88,9 @@ public class Request2Data {
                 case NUMBER:
                     for (int j = 0; j < data.size(); j++) {
                         int finalI1 = i;
+                        List<String> numCol = data.stream().map(x -> x.get(finalI1)).collect(Collectors.toList());
                         try {
-                            dataRows.get(j).add(NumberUtils.createNumber(data.stream().map(x -> x.get(finalI1)).collect(Collectors.toList()).get(j)));
+                            dataRows.get(j).add(NumberUtils.createNumber(numCol.get(j)));
                         } catch (NumberFormatException e) {
                             throw new DataException(ErrorEnum.PARAM_ERROR);
                         }
@@ -94,9 +98,19 @@ public class Request2Data {
                     }
                     break;
                 case STRING:
+                    int finalI1 = i;
+                    List<String> col = data.stream().map(x -> x.get(finalI1)).collect(Collectors.toList());
                     for (int j = 0; j < data.size(); j++) {
-                        int finalI1 = i;
-                        dataRows.get(j).add(data.stream().map(x -> x.get(finalI1)).collect(Collectors.toList()).get(j));
+                        String curElement = col.get(j);
+                        try {
+                            DateUtils.parseDate(curElement, DATE_PATTERNS);
+                        } catch (ParseException | IllegalArgumentException e) {
+                            if(NumberUtils.isCreatable(curElement)) throw new DataException(ErrorEnum.PARAM_ERROR);
+                            dataRows.get(j).add(curElement);
+                            continue;
+
+                        }
+                        throw new DataException(ErrorEnum.PARAM_ERROR);
                     }
                     break;
                 case DATE:
@@ -104,7 +118,7 @@ public class Request2Data {
                         List<Object> curList = dataRows.get(j);
                         List<String> originList = data.get(j);
                         try {
-                            curList.add(DateUtils.parseDate(originList.get(i), PARSE_PATTERNS));
+                            curList.add(DateUtils.parseDate(originList.get(i), DATE_PATTERNS));
                         } catch (ParseException e) {
                             throw new DataException(ErrorEnum.PARAM_ERROR);
                         }
@@ -122,10 +136,11 @@ public class Request2Data {
     }
 
     private static boolean isValidDate(String header) {
-        for (String dateFormat : PARSE_PATTERNS) {
+        for (String dateFormat : DATE_PATTERNS) {
             if (GenericValidator.isDate(header, dateFormat, true)) return true;
         }
         return false;
     }
+
 
 }

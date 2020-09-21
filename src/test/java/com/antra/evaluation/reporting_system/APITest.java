@@ -1,6 +1,9 @@
 package com.antra.evaluation.reporting_system;
 
 import com.antra.evaluation.reporting_system.endpoint.ExcelGenerationController;
+import com.antra.evaluation.reporting_system.enums.ErrorEnum;
+import com.antra.evaluation.reporting_system.exception.DataException;
+import com.antra.evaluation.reporting_system.exception.FileException;
 import com.antra.evaluation.reporting_system.pojo.report.ExcelFile;
 import com.antra.evaluation.reporting_system.service.ExcelService;
 import io.restassured.http.ContentType;
@@ -17,6 +20,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.DataFormatException;
 
 import static io.restassured.module.mockmvc.RestAssuredMockMvc.given;
 import static org.mockito.ArgumentMatchers.any;
@@ -55,18 +59,29 @@ public class APITest {
     }
 
     @Test
-    void testExcelGenerationButNoHeaders() throws IOException {
+    void testExcelGenerationWithInputFormatError() throws IOException {
         ExcelFile testExcelFile = ExcelFile.builder().id("Excel-1").build();
         Mockito.when(excelService.saveExcel(any())).thenReturn(testExcelFile);
         given().accept("application/json").contentType(ContentType.JSON)
                 .body("{\"data\":[[\"Teresa\",\"5\"],[\"Daniel\",\"1\"]]}")
-                .post("/excel/auto").peek().
+                .post("/excel").peek().
                 then().assertThat()
                 .statusCode(400)
                 .body("message", Matchers.equalTo("Excel Data Error: Input data format has error, headers and data must exist and in same length. " +
                         "For multi-sheet request, the field for split by cannot be null"));
     }
 
+    @Test
+    void testExcelGenerationWithDatTypeError() throws IOException {
+
+        Mockito.when(excelService.saveExcel(any())).thenThrow(new DataException(ErrorEnum.PARAM_ERROR));
+        given().accept("application/json").contentType(ContentType.JSON)
+                .body("{\"headers\":[\"Name\",\"Age\"], \"data\":[[\"Teresa\",\"5\"],[\"Daniel\",\"one\"]]}")
+                .post("/excel").peek().
+                then().assertThat()
+                .statusCode(400)
+                .body("message", Matchers.equalTo("Excel Data Error: Error with parameter type. Data types are inconsistent"));
+    }
 
 
     @Test
@@ -146,6 +161,21 @@ public class APITest {
                 then().assertThat()
                 .statusCode(200).body("message", Matchers.equalTo("Deleted Successfully"))
                 .body("body.id", Matchers.equalTo("Excel-1"));
+
+    }
+
+    @Test
+    public void testMultipleExcelGenerationWithFailedRequest() throws IOException {
+        ExcelFile testExcelFile1 = ExcelFile.builder().id("Excel-1").build();
+
+        Mockito.when(excelService.saveExcel(any())).thenReturn(testExcelFile1);
+        Mockito.when(excelService.saveExcel(any())).thenThrow(new FileException(ErrorEnum.PARAM_ERROR));
+        given().accept("application/json").contentType(ContentType.JSON)
+                .body("{\"excels\":[{\"headers\":[\"Name\",\"Age\"], \"data\":[[\"Teresa\",\"5\"],[\"Daniel\",\"1\"]]}," +
+                        "{\"headers\":[\"Name\",\"Age\"], \"data\":[[\"Teresa\",\"5\"],[\"Daniel\",\"1\"]], \"splitBy\":\"Name\"}]}")
+                .post("/excel/multi").peek().
+                then().assertThat()
+                .statusCode(400);
 
     }
 

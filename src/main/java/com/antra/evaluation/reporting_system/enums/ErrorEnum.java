@@ -12,7 +12,7 @@ public enum ErrorEnum {
     INPUT_FORMAT_ERROR(10, "Excel Data Error: Input data format has error, headers and data must exist and in same length. " +
             "For multi-sheet request, the field for split by cannot be null"),
 
-    PARAM_ERROR(11, "Excel Data Error: Error with parameter type"),
+    PARAM_ERROR(11, "Excel Data Error: Error with parameter type. Data types are inconsistent"),
 
     NO_SHEET_DEFINED(12, "Excel Data Error: no sheet is defined"),
 

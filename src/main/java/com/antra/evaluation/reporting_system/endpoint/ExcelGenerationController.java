@@ -63,7 +63,7 @@ public class ExcelGenerationController {
 
     @PostMapping("/excel/auto")
     @ApiOperation("Generate Multi-Sheet Excel Using Split field")
-    public ResponseEntity<ExcelResponse> createMultiSheetExcel(@RequestBody @Validated({MultiSheetGroup.class}) ExcelRequest request) throws IOException {
+    public ResponseEntity<ExcelResponse> createMultiSheetExcel(@RequestBody @Validated({MultiSheetGroup.class}) ExcelRequest request) {
         ExcelFile excelFile;
         try {
             excelFile = excelService.saveExcel(request);
@@ -197,7 +197,7 @@ public class ExcelGenerationController {
             throw ex;
         }
         excelService.deleteExcel(id);
-        log.info( id + " deleted");
+        log.info(id + " deleted");
         return new ResponseEntity<>(new ExcelResponse<>("Deleted Successfully", excelFile), HttpStatus.OK);
     }
 
